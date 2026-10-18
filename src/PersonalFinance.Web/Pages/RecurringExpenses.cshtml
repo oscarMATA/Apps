@@ -1,0 +1,138 @@
+@page
+@model PersonalFinance.Web.Pages.RecurringExpensesModel
+@{
+    ViewData["Title"] = "Recurring expenses";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Recurring expenses</h1>
+        <p class="text-muted">Set a fixed payment to be entered automatically on its schedule.</p>
+    </div>
+</div>
+
+@if (Model.Saved)
+{
+    <div class="alert alert-success" role="status">Recurring expense saved.</div>
+}
+@if (Model.Deleted)
+{
+    <div class="alert alert-success" role="status">Schedule deleted. Previously created expenses were kept.</div>
+}
+
+<section class="card app-card mb-4" id="recurring-form">
+    <div class="card-body">
+        <h2 class="h5">@(Model.Form.Id.HasValue ? "Edit schedule" : "Add a recurring expense")</h2>
+        @if (Model.ActiveCategories.Count == 0 && !Model.Form.Id.HasValue)
+        {
+            <p class="mb-0">Create a category before adding a recurring expense. <a asp-page="/Categories">Manage categories</a>.</p>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Save">
+                <input type="hidden" asp-for="Form.Id" />
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="expense-form-grid">
+                    <div>
+                        <label asp-for="Form.Amount" class="form-label">Amount (MXN)</label>
+                        <input asp-for="Form.Amount" class="form-control" type="number" inputmode="decimal" min="0.01" max="999999999.99" step="0.01" placeholder="0.00" />
+                        <span asp-validation-for="Form.Amount" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.PaymentType" class="form-label">Payment type</label>
+                        <select asp-for="Form.PaymentType" asp-items="Model.PaymentTypes" class="form-select">
+                            <option value="">Choose a type</option>
+                        </select>
+                        <span asp-validation-for="Form.PaymentType" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.CategoryId" class="form-label">Category</label>
+                        <select asp-for="Form.CategoryId" asp-items="Model.CategoryOptions" class="form-select">
+                            <option value="">Choose a category</option>
+                        </select>
+                        <span asp-validation-for="Form.CategoryId" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.Frequency" class="form-label">Schedule</label>
+                        <select asp-for="Form.Frequency" asp-items="Model.Frequencies" class="form-select">
+                            <option value="">Choose a schedule</option>
+                        </select>
+                        <span asp-validation-for="Form.Frequency" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.Description" class="form-label">Description</label>
+                        <input asp-for="Form.Description" class="form-control" maxlength="500" placeholder="e.g. Internet service" />
+                        <span asp-validation-for="Form.Description" class="text-danger"></span>
+                    </div>
+                    @if (Model.Form.Id is null)
+                    {
+                        <div>
+                            <label asp-for="Form.FirstDueDate" class="form-label">First due date</label>
+                            <input asp-for="Form.FirstDueDate" class="form-control" type="date" />
+                            <span asp-validation-for="Form.FirstDueDate" class="text-danger"></span>
+                            <div class="form-text">The first date must be today or later.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div>
+                            <label class="form-label">First due date</label>
+                            <div class="form-control-plaintext">@Model.FirstDueDateLabel</div>
+                            <div class="form-text">Next entry is scheduled for @Model.NextDueDateLabel.</div>
+                        </div>
+                    }
+                </div>
+                <div class="form-text mt-3">If the app is off, it creates each missed entry when it starts again. Monthly dates use the original day (clamped to the month's last day); yearly dates use the original month/day (Feb 29 becomes Feb 28 in non-leap years).</div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">Save schedule</button>
+                    @if (Model.Form.Id.HasValue)
+                    {
+                        <a asp-page="/RecurringExpenses" class="btn btn-outline-secondary">Cancel</a>
+                    }
+                </div>
+            </form>
+        }
+    </div>
+</section>
+
+<section class="card app-card">
+    <div class="card-body">
+        <h2 class="h5">Your schedules</h2>
+        @if (Model.Schedules.Count == 0)
+        {
+            <p class="text-muted mb-0">No recurring expenses configured.</p>
+        }
+        else
+        {
+            <div class="table-responsive mt-3">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Description</th><th>Category</th><th>Type</th><th>Schedule</th><th>Next date</th><th class="text-end">Amount</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                    @foreach (var schedule in Model.Schedules)
+                    {
+                        <tr>
+                            <td>@schedule.Description</td>
+                            <td>@schedule.CategoryName</td>
+                            <td>@schedule.PaymentType.ToDisplayName()</td>
+                            <td>@schedule.Frequency.ToDisplayName()</td>
+                            <td>@schedule.NextDueDateLabel</td>
+                            <td class="text-end text-nowrap">@schedule.AmountLabel</td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-page="/RecurringExpenses" asp-route-id="@schedule.Id">Edit</a>
+                                <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete this recurring schedule? Past expense entries will remain.');">
+                                    <input type="hidden" name="id" value="@schedule.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,18 @@
+# The ASP.NET Core app listens only on 127.0.0.1:5080.
+# First-run password setup is permitted only through the host-only HTTPS site below.
+
+{
+	auto_https disable_redirects
+}
+
+https://127.0.0.1 {
+	bind 127.0.0.1
+	tls internal
+	reverse_proxy 127.0.0.1:5080
+}
+
+https://192.168.100.22 {
+	bind 192.168.100.22
+	tls internal
+	reverse_proxy 127.0.0.1:5080
+}

@@ -1,0 +1,27 @@
+@page
+@model PersonalFinance.Web.Pages.SetupModel
+@{
+    ViewData["Title"] = "Set up password";
+}
+
+<h1>Set up your password</h1>
+<p>Create the password used to access your personal finance app.</p>
+<form method="post" class="auth-form">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
+        <input asp-for="Password" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+        <div class="form-text">Use at least 12 characters. This password is stored as a one-way hash.</div>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ConfirmPassword" class="form-label"></label>
+        <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-primary">Save password</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

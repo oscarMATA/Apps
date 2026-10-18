@@ -1,0 +1,81 @@
+@page
+@model PersonalFinance.Web.Pages.CategoriesModel
+@{
+    ViewData["Title"] = "Categories";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Categories</h1>
+        <p class="text-muted">Create categories to organize your expenses. Archived categories remain attached to past expenses.</p>
+    </div>
+</div>
+
+<section class="card app-card mb-4">
+    <div class="card-body">
+        <h2 class="h5">Add a category</h2>
+        <form method="post" asp-page-handler="Create" class="category-create-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <label asp-for="NewName" class="form-label">Category name</label>
+            <div class="d-flex gap-2">
+                <input asp-for="NewName" class="form-control" maxlength="100" placeholder="e.g. Groceries" />
+                <button type="submit" class="btn btn-primary text-nowrap">Add category</button>
+            </div>
+            <span asp-validation-for="NewName" class="text-danger"></span>
+        </form>
+    </div>
+</section>
+
+@if (TempData["CategoryError"] is string categoryError)
+{
+    <div class="alert alert-danger" role="alert">@categoryError</div>
+}
+
+<section class="card app-card">
+    <div class="card-body">
+        <h2 class="h5">Your categories</h2>
+        @if (Model.Categories.Count == 0)
+        {
+            <p class="text-muted mb-0">No categories yet. Add one above to start recording expenses.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>Category</th><th>Status</th><th class="text-end">Actions</th></tr></thead>
+                    <tbody>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <tr>
+                            <td>
+                                <form method="post" asp-page-handler="Rename" class="category-rename-form">
+                                    <input type="hidden" name="id" value="@category.Id" />
+                                    <input class="form-control form-control-sm" name="name" value="@category.Name" maxlength="100" aria-label="Category name" />
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+                                </form>
+                            </td>
+                            <td><span class="badge @(category.IsArchived ? "text-bg-secondary" : "text-bg-success")">@(category.IsArchived ? "Archived" : "Active")</span></td>
+                            <td class="text-end">
+                                @if (category.IsArchived)
+                                {
+                                    <form method="post" asp-page-handler="Restore" class="d-inline">
+                                        <input type="hidden" name="id" value="@category.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Restore</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form method="post" asp-page-handler="Archive" class="d-inline">
+                                        <input type="hidden" name="id" value="@category.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Archive</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</section>

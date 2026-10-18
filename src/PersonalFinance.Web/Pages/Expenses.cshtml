@@ -1,0 +1,136 @@
+@page
+@model PersonalFinance.Web.Pages.ExpensesModel
+@{
+    ViewData["Title"] = "Expenses";
+}
+
+<div class="page-heading">
+    <div>
+        <h1>Expenses</h1>
+        <p class="text-muted">Record and review your spending in Mexican pesos.</p>
+    </div>
+</div>
+
+@if (Model.Saved)
+{
+    <div class="alert alert-success" role="status">Expense saved.</div>
+}
+@if (Model.Deleted)
+{
+    <div class="alert alert-success" role="status">Expense deleted.</div>
+}
+
+<section class="card app-card mb-4" id="expense-form">
+    <div class="card-body">
+        <h2 class="h5">@(Model.Form.Id.HasValue ? "Edit expense" : "Add an expense")</h2>
+        @if (Model.ActiveCategories.Count == 0 && !Model.Form.Id.HasValue)
+        {
+            <p class="mb-0">Create a category before adding an expense. <a asp-page="/Categories">Manage categories</a>.</p>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="Save">
+                <input type="hidden" asp-for="Form.Id" />
+                <input type="hidden" asp-for="Month" />
+                <input type="hidden" asp-for="Year" />
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="expense-form-grid">
+                    <div>
+                        <label asp-for="Form.Amount" class="form-label">Amount (MXN)</label>
+                        <input asp-for="Form.Amount" class="form-control" type="number" inputmode="decimal" min="0.01" max="999999999.99" step="0.01" placeholder="0.00" />
+                        <span asp-validation-for="Form.Amount" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.ExpenseDate" class="form-label">Date</label>
+                        <input asp-for="Form.ExpenseDate" class="form-control" type="date" />
+                        <span asp-validation-for="Form.ExpenseDate" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.PaymentType" class="form-label">Payment type</label>
+                        <select asp-for="Form.PaymentType" asp-items="Model.PaymentTypes" class="form-select">
+                            <option value="">Choose a type</option>
+                        </select>
+                        <span asp-validation-for="Form.PaymentType" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.CategoryId" class="form-label">Category</label>
+                        <select asp-for="Form.CategoryId" asp-items="Model.CategoryOptions" class="form-select">
+                            <option value="">Choose a category</option>
+                        </select>
+                        <span asp-validation-for="Form.CategoryId" class="text-danger"></span>
+                    </div>
+                    <div class="expense-description">
+                        <label asp-for="Form.Description" class="form-label">Description</label>
+                        <input asp-for="Form.Description" class="form-control" maxlength="500" placeholder="What was this expense for?" />
+                        <span asp-validation-for="Form.Description" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">Save expense</button>
+                    @if (Model.Form.Id.HasValue)
+                    {
+                        <a asp-page="/Expenses" asp-route-month="@Model.Month" asp-route-year="@Model.Year" class="btn btn-outline-secondary">Cancel</a>
+                    }
+                </div>
+            </form>
+        }
+    </div>
+</section>
+
+<section class="card app-card">
+    <div class="card-body">
+        <div class="history-heading">
+            <h2 class="h5 mb-0">Expense history</h2>
+            <nav class="period-nav" aria-label="Select month">
+                <a class="btn btn-sm btn-outline-secondary" asp-page="/Expenses" asp-route-month="@Model.PreviousMonth.Month" asp-route-year="@Model.PreviousMonth.Year" aria-label="Previous month">‹</a>
+                <span>@Model.MonthLabel</span>
+                <a class="btn btn-sm btn-outline-secondary" asp-page="/Expenses" asp-route-month="@Model.NextMonth.Month" asp-route-year="@Model.NextMonth.Year" aria-label="Next month">›</a>
+            </nav>
+        </div>
+
+        @if (Model.Expenses.Count == 0)
+        {
+            <p class="text-muted mt-3 mb-0">No expenses recorded for this month.</p>
+        }
+        else
+        {
+            <div class="table-responsive mt-3">
+                <table class="table align-middle">
+                    <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Type</th><th class="text-end">Amount</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+                    <tbody>
+                    @foreach (var expense in Model.Expenses)
+                    {
+                        <tr>
+                            <td data-label="Date">@expense.DateLabel</td>
+                            <td data-label="Description">
+                                @expense.Description
+                                @if (expense.IsScheduled)
+                                {
+                                    <span class="badge text-bg-light">Scheduled</span>
+                                }
+                            </td>
+                            <td data-label="Category">@expense.CategoryName</td>
+                            <td data-label="Type">@expense.PaymentType.ToDisplayName()</td>
+                            <td data-label="Amount" class="text-end text-nowrap">@expense.AmountLabel</td>
+                            <td class="text-end text-nowrap">
+                                <a class="btn btn-sm btn-outline-primary" asp-page="/Expenses" asp-route-id="@expense.Id" asp-route-month="@Model.Month" asp-route-year="@Model.Year">Edit</a>
+                                <form method="post" asp-page-handler="Delete" class="d-inline" onsubmit="return confirm('Delete this expense?');">
+                                    <input type="hidden" name="id" value="@expense.Id" />
+                                    <input type="hidden" name="month" value="@Model.Month" />
+                                    <input type="hidden" name="year" value="@Model.Year" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                    <tfoot><tr><th colspan="4">Monthly total</th><th class="text-end text-nowrap">@Model.TotalLabel</th><th></th></tr></tfoot>
+                </table>
+            </div>
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
